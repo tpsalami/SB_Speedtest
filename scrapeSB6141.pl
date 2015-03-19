@@ -193,10 +193,14 @@ if (open(FILE,">>$filetoopen")) {
 		print FILE "$x,";
 	}
 	print FILE sum(@downPowers) / @downPowers;
+	print FILE ",". scalar(@downPowers);
 	print FILE "\n";
 
 
 	close(FILE);
+}
+else {
+	print "cannot open file\n";
 }
 #now, what do we do with that data
 
