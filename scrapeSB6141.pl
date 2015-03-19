@@ -28,7 +28,9 @@ my @downPowers= ();
 my @upChannels = ();
 my @upFreqs = ();
 my @upPowers = ();
-
+my @statChannels = ();
+my @statUnerrored = ();
+my @statUncorrectables = ();
 
 
 my $url = "http://192.168.100.1/cmSignalData.htm";
@@ -165,7 +167,56 @@ for(my $i=0; $i<@outstuff;$i++){
 		if($outstuff[$i] =~ /<P>/i){  #catch getting lost,
 			$lineCount = 100;
 		}
-	
+	}
+
+
+if($tableCount == 3) {  #stats table
+		if($lineCount == 1) { #channel ID
+			my $splitstring = "<TD>";
+			my @moreparts = split(/$splitstring/,$outstuff[$i]);
+			for (my $nn=0; $nn<@moreparts; $nn++){
+				$splitstring = "&nbsp; ";
+				my @evenmoreparts = split(/$splitstring/,$moreparts[$nn]);
+				if(exists($evenmoreparts[0])){
+					if($evenmoreparts[0]=~ /^[0-9,.E]+$/ ) {
+						push(@statChannels, $evenmoreparts[0]);
+						$nChannelsDown++;
+					}
+				}
+			}		
+		}
+		if($lineCount == 2) { #unerrored
+			my $splitstring = "<TD>";
+			my @moreparts = split(/$splitstring/,$outstuff[$i]);
+			for (my $nn=0; $nn<@moreparts; $nn++){
+				$splitstring = "&nbsp;";
+				my @evenmoreparts = split(/$splitstring/,$moreparts[$nn]);
+				if(exists($evenmoreparts[0])){
+					if($evenmoreparts[0]=~ /^[0-9,.E]+$/ ) {
+						push(@statUnerrored, $evenmoreparts[0]);
+						$nChannelsDown++;
+					}
+				}
+			}		
+		}
+		if($lineCount == 4) { #uncorrectables
+			my $splitstring = "<TD>";
+			my @moreparts = split(/$splitstring/,$outstuff[$i]);
+			for (my $nn=0; $nn<@moreparts; $nn++){
+				$splitstring = "&nbsp;";
+				my @evenmoreparts = split(/$splitstring/,$moreparts[$nn]);
+				if(exists($evenmoreparts[0])){
+					if($evenmoreparts[0]=~ /^[0-9,.E]+$/ ) {
+						push(@statUncorrectables, $evenmoreparts[0]);
+						$nChannelsDown++;
+					}
+				}
+			}		
+		}
+		$lineCount++;
+		if($outstuff[$i] =~ /<P>/i){  #catch getting lost,
+			$lineCount = 100;
+		}
 	}
 }
 
@@ -180,8 +231,38 @@ if (scalar(@downChannels)>0){
 	@maxDownSNR = ($downChannels[$idxMax], $downFreqs[$idxMax], $downSNRs[$idxMax], $downPowers[$idxMax]);
 }
 
+
+#clean up the data for easy outputing
+my $MAXNUMCHANNELS = 10;
+my @downChannelsOut = (0) x $MAXNUMCHANNELS; 
+my @downPowersOut = (0) x $MAXNUMCHANNELS;
+my @upPowersOut = (0) x $MAXNUMCHANNELS;
+my @statUnerroredOut = (0) x $MAXNUMCHANNELS;
+my @statUncorrectablesOut = (0) x $MAXNUMCHANNELS;
+
+print @downChannels;
+for (my $mm=1; $mm<$MAXNUMCHANNELS; $mm++){
+	for (my $nn=1; $nn<$MAXNUMCHANNELS; $nn++){
+		if (exists($downChannels[$nn]) && ($downChannels[$nn] == $mm)) { 
+			$downChannelsOut[$nn] = $downChannels[$nn];
+			$downPowersOut[$nn] = $downPowers[$nn];	
+		}
+		if (exists($upChannels[$nn]) && $upChannels[$nn] == $mm) { 
+			$upPowersOut[$nn] = $upPowers[$nn];	
+		}
+		if (exists($statChannels[$nn]) && $statChannels[$nn] == $mm) { 
+			$statUncorrectablesOut[$nn] = $statUncorrectables[$nn];	
+			$statUnerroredOut[$nn] = $statUnerrored[$nn];	
+		}
+	}
+}
+
 my $x;
 my $filetoopen = "PowerLevelData.csv";
+$filetoopen = "test.csv";
+
+my $speedOutput = "";
+#$speedOutput = qx/SpeedTest-cli.sh --option/;
 
 if (open(FILE,">>$filetoopen")) {
 
@@ -194,6 +275,12 @@ if (open(FILE,">>$filetoopen")) {
 	}
 	print FILE sum(@downPowers) / @downPowers;
 	print FILE ",". scalar(@downPowers);
+	foreach $x (@downChannelsOut) { print FILE ", $x";}
+	foreach $x (@downPowersOut) { print FILE ", $x";}
+	foreach $x (@upPowersOut) { print FILE ", $x";}
+	foreach $x (@statUncorrectablesOut) { print FILE ", $x";}
+	foreach $x (@statUnerroredOut) { print FILE ", $x";}
+	print FILE "," . $speedOutput;
 	print FILE "\n";
 
 
