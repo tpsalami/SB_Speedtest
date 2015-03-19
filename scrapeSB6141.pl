@@ -259,7 +259,7 @@ for (my $mm=1; $mm<$MAXNUMCHANNELS; $mm++){
 
 my $x;
 my $filetoopen = "PowerLevelData.csv";
-$filetoopen = "test.csv";
+#$filetoopen = "test.csv";
 
 my $speedOutput = "";
 #$speedOutput = qx/SpeedTest-cli.sh --option/;
