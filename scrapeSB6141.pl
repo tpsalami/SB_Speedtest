@@ -220,8 +220,8 @@ if($tableCount == 3) {  #stats table
 	}
 }
 
-my @maxDownPower = ();
-my @maxDownSNR = ();
+my @maxDownPower = (0) x 4;
+my @maxDownSNR = (0) x 4;
 if (scalar(@downChannels)>0){
 	my $idxMax = 0;
 	$downPowers[$idxMax] > $downPowers[$_] or $idxMax = $_ for 1 .. $#downPowers;
@@ -241,18 +241,18 @@ my @statUnerroredOut = (0) x $MAXNUMCHANNELS;
 my @statUncorrectablesOut = (0) x $MAXNUMCHANNELS;
 
 print @downChannels;
-for (my $mm=1; $mm<$MAXNUMCHANNELS; $mm++){
-	for (my $nn=1; $nn<$MAXNUMCHANNELS; $nn++){
+for (my $mm=0; $mm<$MAXNUMCHANNELS; $mm++){
+	for (my $nn=0; $nn<$MAXNUMCHANNELS; $nn++){
 		if (exists($downChannels[$nn]) && ($downChannels[$nn] == $mm)) { 
-			$downChannelsOut[$nn] = $downChannels[$nn];
-			$downPowersOut[$nn] = $downPowers[$nn];	
+			$downChannelsOut[$mm] = $downChannels[$nn];
+			$downPowersOut[$mm] = $downPowers[$nn];	
 		}
 		if (exists($upChannels[$nn]) && $upChannels[$nn] == $mm) { 
-			$upPowersOut[$nn] = $upPowers[$nn];	
+			$upPowersOut[$mm] = $upPowers[$nn];	
 		}
 		if (exists($statChannels[$nn]) && $statChannels[$nn] == $mm) { 
-			$statUncorrectablesOut[$nn] = $statUncorrectables[$nn];	
-			$statUnerroredOut[$nn] = $statUnerrored[$nn];	
+			$statUncorrectablesOut[$mm] = $statUncorrectables[$nn];	
+			$statUnerroredOut[$mm] = $statUnerrored[$nn];	
 		}
 	}
 }
@@ -261,8 +261,17 @@ my $x;
 my $filetoopen = "PowerLevelData.csv";
 #$filetoopen = "test.csv";
 
-my $speedOutput = "";
-#$speedOutput = qx/SpeedTest-cli.sh --option/;
+
+my $averagePower = 0;
+my $numChann = 0;
+if(@downPowers > 0) {
+	$averagePower = sum(@downPowers)/@downPowers;
+	$numChann = scalar(@downPowers);
+}
+
+my $speedOutput = "0,0,\n";
+my $scriptName = "./speedtest_cli.sh";
+#$speedOutput = qx/$scriptName/;
 
 if (open(FILE,">>$filetoopen")) {
 
@@ -273,15 +282,14 @@ if (open(FILE,">>$filetoopen")) {
 	foreach $x (@maxDownSNR) {
 		print FILE "$x,";
 	}
-	print FILE sum(@downPowers) / @downPowers;
-	print FILE ",". scalar(@downPowers);
+	print FILE $averagePower . "," . $numChann;
 	foreach $x (@downChannelsOut) { print FILE ", $x";}
 	foreach $x (@downPowersOut) { print FILE ", $x";}
 	foreach $x (@upPowersOut) { print FILE ", $x";}
 	foreach $x (@statUncorrectablesOut) { print FILE ", $x";}
 	foreach $x (@statUnerroredOut) { print FILE ", $x";}
 	print FILE "," . $speedOutput;
-	print FILE "\n";
+#	print FILE "\n";
 
 
 	close(FILE);
